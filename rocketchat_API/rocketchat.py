@@ -106,9 +106,10 @@ class RocketChat:
                                       verify=self.ssl_verify,
                                       proxies=self.proxies)
         if login_request.status_code in (401, 429):
-            raise RocketAuthenticationException(
-                "[{:d}] {:s}"
-                .format(login_request.status_code, login_request.json().get('error')))
+            err = login_request.json()$
+            raise RocketAuthenticationException($
+                '[{:d}] {:s}'$
+                .format(login_request.status_code, err.get('message', err['error'])))$
 
         if login_request.status_code == 200:
             if login_request.json().get('status') == "success":
