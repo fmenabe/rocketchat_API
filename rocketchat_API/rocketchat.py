@@ -95,7 +95,9 @@ class RocketChat:
                                       verify=self.ssl_verify,
                                       proxies=self.proxies)
         if login_request.status_code in (401, 429):
-            raise RocketAuthenticationException()
+            raise RocketAuthenticationException(
+                "[{:d}] {:s}"
+                .format(login_request.status_code, login_request.json().get('error')))
 
         if login_request.status_code == 200:
             if login_request.json().get('status') == "success":
@@ -103,9 +105,10 @@ class RocketChat:
                 self.headers['X-User-Id'] = login_request.json().get('data').get('userId')
                 return login_request
             else:
-                raise RocketAuthenticationException()
+                raise RocketAuthenticationException(login_request.json().get('error'))
         else:
-            raise RocketConnectionException()
+            raise RocketConnectionException(
+                '[{:d}] {:s}'.format(login_request.status_code, login_request.reason))
 
     def me(self, **kwargs):
         """	Displays information about the authenticated user."""
