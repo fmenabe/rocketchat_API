@@ -94,7 +94,7 @@ class RocketChat:
                                       data=request_data,
                                       verify=self.ssl_verify,
                                       proxies=self.proxies)
-        if login_request.status_code == 401:
+        if login_request.status_code in (401, 429):
             raise RocketAuthenticationException()
 
         if login_request.status_code == 200:
