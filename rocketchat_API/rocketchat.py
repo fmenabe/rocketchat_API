@@ -8,13 +8,14 @@ import requests
 from rocketchat_API.APIExceptions.RocketExceptions import RocketConnectionException, RocketAuthenticationException, \
     RocketMissingParamException
 
+_EMAIL_RE = re.compile(r'^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$')
 
 class RocketChat:
     API_path = '/api/v1/'
 
     def __init__(self, user=None, password=None, auth_token=None, user_id=None,
-                 server_url='http://127.0.0.1:3000', ssl_verify=True, proxies=None,
-                 timeout=30, session=None):
+                 is_ldap=False, server_url='http://127.0.0.1:3000', ssl_verify=True,
+                 proxies=None, timeout=30, session=None):
         """Creates a RocketChat object and does login on the specified server"""
         self.headers = {}
         self.server_url = server_url
@@ -23,7 +24,7 @@ class RocketChat:
         self.timeout = timeout
         self.req = session or requests
         if user and password:
-            self.login(user, password)  # skipcq: PTC-W1006
+            self.login(user, password, is_ldap)  # skipcq: PTC-W1006
         if auth_token and user_id:
             self.headers['X-Auth-Token'] = auth_token
             self.headers['X-User-Id'] = user_id
@@ -82,16 +83,25 @@ class RocketChat:
 
     # Authentication
 
-    def login(self, user, password):
-        request_data = {
-            'password': password
-        }
-        if re.match(r'^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', user):
-            request_data['user'] = user
+    def login(self, user, password, is_ldap=False):
+        if is_ldap:
+            request_data = {
+              'username': user,
+              'ldap': True,
+              'ldapPass': password,
+              'ldapOptions': {}
+            }
         else:
-            request_data['username'] = user
+            request_data = {
+                'password': password
+            }
+            if _EMAIL_RE.match(user):
+                request_data['user'] = user
+            else:
+                request_data['username'] = user
+
         login_request = requests.post(self.server_url + self.API_path + 'login',
-                                      data=request_data,
+                                      data=json.dumps(request_data),
                                       verify=self.ssl_verify,
                                       proxies=self.proxies)
         if login_request.status_code in (401, 429):
