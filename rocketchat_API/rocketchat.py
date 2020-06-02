@@ -757,3 +757,7 @@ class RocketChat:
     def permissions_list_all(self, **kwargs):
         """Returns all permissions from the server."""
         return self.__call_api_get('permissions.listAll', kwargs=kwargs)
+
+    def permissions_update(self, permissions, **kwargs):
+        """Update given permissions."""
+        return self.__call_api_post('permissions.update', permissions=permissions, **kwargs)
